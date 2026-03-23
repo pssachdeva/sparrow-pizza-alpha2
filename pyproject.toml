@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "law-norms-llms"
+version = "0.1.0"
+description = "Run, process, and inspect law-norm vignette experiments with LLMs."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "anthropic",
+  "google-genai",
+  "litellm",
+  "loguru",
+  "matplotlib",
+  "numpy",
+  "openai",
+  "pandas",
+  "pydantic>=2",
+  "pyyaml",
+  "requests",
+  "streamlit",
+]
+
+[project.optional-dependencies]
+analysis = [
+  "statsmodels",
+]
+dev = [
+  "pytest",
+  "ruff",
+  "statsmodels",
+]
+
+[project.scripts]
+law-norms-llms-run-async = "law_norms_llms.async_runner:cli"
+law-norms-llms-submit-batch = "law_norms_llms.batch_runner:cli"
+law-norms-llms-process-runs = "law_norms_llms.process_results:cli"
+law-norms-llms-human-regression = "law_norms_llms.human_regression:cli"
+law-norms-llms-llm-regression = "law_norms_llms.llm_regression:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/law_norms_llms"]
+
+[tool.ruff]
+target-version = "py310"
