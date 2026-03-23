@@ -1,0 +1,11 @@
+A man is driving between two cities in order to get to the hospital after
+learning that his daughter was rushed to the emergency room. He is driving on a
+Sunday morning, there are no other vehicles on the way, and the driving
+conditions are perfect – no rain and excellent visibility. This is a route he
+drives regularly and knows very well. He turns onto a road and sees the sign
+informing motorists that the legal speed limit on the road is 70 miles per hour.
+The man drives for the next five minutes at {speed} miles per hour, before
+turning onto a different road.
+
+How appropriate would most people think it is for the driver to drive at that
+speed?

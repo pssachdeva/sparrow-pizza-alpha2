@@ -1,0 +1,25 @@
+experiment_name: testing
+
+temperature: 1.0
+max_completion_tokens: 1000
+use_structured_output: true
+repeats: 5
+
+prompts:
+  - name: appropriateness
+    schema_name: VignetteResponse
+    system_template_path: templates/system.txt
+
+vignettes:
+  - path: cases/casino_*.txt
+    thresholds:
+      age: [17, 18, 19]
+
+  - path: cases/lorry_*.txt
+    thresholds:
+      weight: [7.4, 7.5, 7.6, 8.0]
+
+models:
+  - provider: openai
+    name: gpt-5.4-2026-03-05
+

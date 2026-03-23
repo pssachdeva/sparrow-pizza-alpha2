@@ -1,0 +1,7 @@
+A man is driving between two cities in order to attend a meeting. He turns onto
+a road and notices a sign informing motorists that the legal speed limit on the
+road is 70 miles per hour. The man drives for the next five minutes at {speed}
+miles per hour, before turning onto a different road.
+
+How appropriate would most people think it is for the driver to drive at that
+speed?

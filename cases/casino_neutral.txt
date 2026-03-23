@@ -1,0 +1,7 @@
+A man works for a casino in London. His job is to make sure that people under
+the age of 18 do not enter the casino, as is required by the law. One evening,
+he sees a young customer in the line and asks her to present her ID. The ID
+shows the customer {age}. The man lets the customer enter the casino.
+
+How appropriate would most people think it is for the man to let this customer
+enter the casino?

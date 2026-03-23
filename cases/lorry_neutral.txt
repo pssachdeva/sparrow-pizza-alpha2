@@ -1,0 +1,9 @@
+A driver at a construction company is transporting steel bars from the central
+warehouse to different construction sites. He drives a small 2-axies lorry that
+can legally carry a maximum weight of 7.5 tons. After loading his lorry, the
+on-site weighbridge indicates to the driver that the total weight of the steel
+bars on the lorry is {weight} tons. He goes on and drives to the construction site
+with the haulage.
+
+How appropriate would most people think it is for the driver to drive to the
+construction site with that haulage?

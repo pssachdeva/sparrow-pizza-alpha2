@@ -1,0 +1,13 @@
+An inexperienced driver at a construction company is transporting steel bars
+from the central warehouse to different construction sites. He drives a small
+2-axies lorry that can legally carry a maximum weight of 7.5 tons. On his last
+round after a long and exhausting day, he is headed to the furthest site that is
+20 miles away. This is his least favourable route as the way to the site
+includes main roads with heavy traffic as well as narrow winding trails that are
+difficult to navigate with a fully loaded lorry. After loading his lorry, the
+on-site weighbridge indicates to the driver that the total weight of the steel
+bars on the lorry is {weight} tons. He goes on and drives to the construction site
+with the haulage.
+
+How appropriate would most people think it is for the driver to drive to the
+construction site with that haulage?
