@@ -215,27 +215,31 @@ def main() -> None:
     figure = build_threshold_figure(filtered, human_dataframe, selected_series, selected_vignette)
     with plot_column:
         render_threshold_figure(figure, len(selected_series))
-        st.markdown("<h3 style='text-align: center;'>Threshold Summary</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center;'>Threshold Deltas</h3>", unsafe_allow_html=True)
+        combined_rows: list[pd.DataFrame] = []
         for series_name in selected_series:
             if series_name == HUMAN_OPTION:
                 delta_pivot = build_human_delta_pivot(human_dataframe, selected_vignette)
-                title = HUMAN_OPTION
+                model_label = HUMAN_OPTION
             else:
                 delta_table = build_threshold_delta_table(filtered, selected_vignette, selected_models=[series_name])
                 delta_pivot = build_threshold_delta_pivot(delta_table)
-                title = format_model_label(series_name)
+                model_label = format_model_label(series_name)
 
             if delta_pivot.empty or delta_pivot.isna().all(axis=None):
                 continue
 
-            display_table = delta_pivot.copy()
-            for column in display_table.columns:
-                display_table[column] = display_table[column].map(
+            display_row = delta_pivot.copy()
+            for column in display_row.columns:
+                display_row[column] = display_row[column].map(
                     lambda value: round(float(value), 3) if pd.notna(value) else value
                 )
+            display_row.insert(0, "Model", model_label)
+            combined_rows.append(display_row)
 
-            st.markdown(f"<div style='text-align: center; font-weight: 600;'>{title}</div>", unsafe_allow_html=True)
-            _, table_column, _ = st.columns([1.7, 1.0, 1.7])
+        if combined_rows:
+            display_table = pd.concat(combined_rows, ignore_index=True)
+            _, table_column, _ = st.columns([1.3, 1.8, 1.3])
             with table_column:
                 st.table(display_table)
 

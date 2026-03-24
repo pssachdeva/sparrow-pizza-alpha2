@@ -62,6 +62,7 @@ class VignetteExperimentConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     experiment_name: str
+    description: str | None = None
     run_dir: Path | None = None
     prompts: list[PromptConfig]
     vignettes: list[VignetteSourceConfig]
