@@ -100,7 +100,7 @@ def build_human_delta_pivot(human_dataframe: pd.DataFrame, vignette_group: str) 
 def main() -> None:
     """Render the prompt-aware Streamlit dashboard."""
     st.set_page_config(page_title="Vignette Dashboard", layout="wide")
-    st.markdown("<h1 style='text-align: center;'>Vignette Dashboard</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Law and Norms in LLMs</h1>", unsafe_allow_html=True)
 
     _, plot_column, _ = st.columns([0.2, 4.6, 0.2], gap="small")
 
