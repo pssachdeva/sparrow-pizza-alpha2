@@ -76,6 +76,8 @@ def main(config_path: str) -> None:
     config_file = Path(config_path).expanduser().resolve()
     cfg = load_experiment_config(config_file)
     tasks = build_execution_tasks(cfg)
+    requests_per_model = len(tasks) * cfg.repeats
+    total_requests = requests_per_model * len(cfg.models)
 
     run_dir = cfg.resolved_run_dir()
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -83,6 +85,8 @@ def main(config_path: str) -> None:
     manifest_path = save_execution_manifest(run_dir, tasks)
     logger.info(f"Execution manifest: {manifest_path}")
     logger.info(f"Expanded tasks: {len(tasks)}")
+    logger.info(f"Requests per model batch: {requests_per_model}")
+    logger.info(f"Total requests across configured models: {total_requests}")
 
     batch_entries: list[dict] = []
     metadata_path = save_batch_metadata(cfg, config_file, run_dir, batch_entries)

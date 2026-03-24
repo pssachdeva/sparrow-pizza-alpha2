@@ -370,6 +370,8 @@ def process_batch_outputs(
     dataframe = create_results_dataframe(run_dir)
     if not dataframe.empty:
         write_results_csv(dataframe, csv_path, append=append_results)
+        logger.info(f"Extracted rows: {len(dataframe)}")
+        logger.info(f"Saved normalized CSV: {csv_path.resolve()}")
 
 
 def main(
@@ -392,6 +394,8 @@ def main(
     dataframe = create_results_dataframe(run_dir)
     if not dataframe.empty:
         write_results_csv(dataframe, csv_path, append=append_results)
+        logger.info(f"Extracted rows: {len(dataframe)}")
+        logger.info(f"Saved normalized CSV: {csv_path.resolve()}")
 
 
 def cli() -> None:
