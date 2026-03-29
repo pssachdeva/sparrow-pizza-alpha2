@@ -1,0 +1,87 @@
+experiment_name: exp1.7.0
+description: >
+  Persona experiment: layperson, lawyer, and judge personas with monetary incentive.
+  Tests Claude Opus 4.6, Gemini 3.1 Pro, and GPT-5.4.
+
+temperature: 1.0
+use_structured_output: true
+repeats: 30
+
+prompts:
+  - name: persona_layperson
+    schema_name: VignetteResponse
+    system_template_path: templates/system_persona_layperson.txt
+
+  - name: persona_lawyer
+    schema_name: VignetteResponse
+    system_template_path: templates/system_persona_lawyer.txt
+
+  - name: persona_judge
+    schema_name: VignetteResponse
+    system_template_path: templates/system_persona_judge.txt
+
+
+vignettes:
+  - path: cases/consent_*.txt
+    thresholds:
+      age:
+        - "15 years and 8 months"
+        - "15 years and 9 months"
+        - "15 years and 10 months"
+        - "15 years and 11 months"
+        - "16 years and 1 month"
+        - "16 years and 2 months"
+        - "16 years and 3 months"
+        - "16 years and 4 months"
+
+  - path: cases/lorry_*.txt
+    thresholds:
+      weight:
+        - 7.46
+        - 7.47
+        - 7.48
+        - 7.49
+        - 7.51
+        - 7.52
+        - 7.53
+        - 7.54
+
+  - path: cases/casino_*.txt
+    thresholds:
+      age:
+        - "will turn 18 in seven days"
+        - "will turn 18 in five days"
+        - "will turn 18 in three days"
+        - "will turn 18 in one day"
+        - "turned 18 one day ago"
+        - "turned 18 three days ago"
+        - "turned 18 five days ago"
+        - "turned 18 seven days ago"
+
+  - path: cases/speeding_*.txt
+    thresholds:
+      speed:
+        - 66
+        - 67
+        - 68
+        - 69
+        - 71
+        - 72
+        - 73
+        - 74
+
+
+models:
+  - provider: anthropic
+    name: claude-opus-4-6
+    output_tokens: 2000
+    reasoning:
+      tokens: 1024
+
+  - provider: google
+    name: gemini-3.1-pro-preview
+    output_tokens: 2000
+
+  - provider: openai
+    name: gpt-5.4
+    output_tokens: 2000
