@@ -149,7 +149,12 @@ def main() -> None:
                 format_func=format_vignette_label,
             )
 
-    model_options = sorted(filtered["model"].dropna().astype(str).unique().tolist())
+    HIDDEN_MODELS = {"claude-sonnet-4-6"}
+    model_options = sorted(
+        model
+        for model in filtered["model"].dropna().astype(str).unique().tolist()
+        if model not in HIDDEN_MODELS
+    )
     if not model_options:
         st.warning("No model rows were found for the selected dataset and prompt.")
         return
