@@ -1,7 +1,6 @@
-experiment_name: exp1.6_opus
+experiment_name: exp1.6.5
 description: >
-  This is a Claude Opus 4.6 experiment, repeated after the previous run ran into issues with billing.
-  Number of output tokens has been reduced. Number of repeats has been lowered, to reduce costs.
+  This is an experiment with open-source models, using the baseline personas.
 
 temperature: 1.0
 use_structured_output: true

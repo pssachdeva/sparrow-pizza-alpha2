@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from loguru import logger
+from tqdm import tqdm
 
 from law_norms_llms.batch import run_repeats
 from law_norms_llms.config import load_experiment_config
@@ -57,7 +58,9 @@ def main(config_path: str) -> None:
         model_dir = run_dir / f"{provider}_{sanitize_model_name(model_id)}"
         model_dir.mkdir(parents=True, exist_ok=True)
 
-        for task in tasks:
+        task_bar = tqdm(tasks, desc=f"{model_name}", unit="task")
+        for task in task_bar:
+            task_bar.set_postfix_str(task.request_stem, refresh=True)
             missing_runs = [
                 repeat
                 for repeat in range(1, cfg.repeats + 1)
