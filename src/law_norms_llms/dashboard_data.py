@@ -47,6 +47,28 @@ NUMBER_WORDS = {
     "five": 5,
     "seven": 7,
 }
+CONSENT_DISTANCE_MAP = {
+    "15 years and 8 months": -4,
+    "15 years and 9 months": -3,
+    "15 years and 10 months": -2,
+    "15 years and 11 months": -1,
+    "16 years and 1 month": 1,
+    "16 years and 2 months": 2,
+    "16 years and 3 months": 3,
+    "16 years and 4 months": 4,
+}
+CASINO_DISTANCE_MAP = {
+    "will turn 18 in seven days": -4,
+    "will turn 18 in five days": -3,
+    "will turn 18 in three days": -2,
+    "will turn 18 in one day": -1,
+    "turned 18 one day ago": 1,
+    "turned 18 three days ago": 2,
+    "turned 18 five days ago": 3,
+    "turned 18 seven days ago": 4,
+}
+SPEEDING_DISTANCE_MAP = {66.0: 4, 67.0: 3, 68.0: 2, 69.0: 1, 71.0: -1, 72.0: -2, 73.0: -3, 74.0: -4}
+LORRY_DISTANCE_MAP = {7.46: 4, 7.47: 3, 7.48: 2, 7.49: 1, 7.51: -1, 7.52: -2, 7.53: -3, 7.54: -4}
 
 
 def default_results_csv() -> Path:
@@ -148,6 +170,53 @@ def _threshold_sort_key(vignette: str, value: object) -> tuple[int, float | str]
     return (1, text)
 
 
+def threshold_distance_for_value(vignette: str, value: object) -> int | None:
+    """Return signed distance from the legal threshold for one vignette value."""
+    group = threshold_group_for_vignette(vignette)
+    if group is None:
+        return None
+    if group == "consent":
+        return CONSENT_DISTANCE_MAP.get(str(value).strip())
+    if group == "casino":
+        return CASINO_DISTANCE_MAP.get(str(value).strip())
+    if group == "speeding":
+        numeric = _parse_numeric_like(value)
+        if numeric is None:
+            return None
+        return SPEEDING_DISTANCE_MAP.get(numeric)
+    if group == "lorry":
+        numeric = _parse_numeric_like(value)
+        if numeric is None:
+            return None
+        return LORRY_DISTANCE_MAP.get(round(numeric, 2))
+    return None
+
+
+def adjacent_threshold_means(
+    dataframe: pd.DataFrame,
+    *,
+    value_column: str,
+    distance_column: str,
+) -> tuple[float, float] | None:
+    """Return means at the nearest legal and illegal threshold values."""
+    working = dataframe.dropna(subset=[value_column, distance_column]).copy()
+    if working.empty:
+        return None
+
+    positive_distances = pd.to_numeric(working.loc[working[distance_column] > 0, distance_column], errors="coerce")
+    negative_distances = pd.to_numeric(working.loc[working[distance_column] < 0, distance_column], errors="coerce")
+    positive_distances = positive_distances.dropna()
+    negative_distances = negative_distances.dropna()
+    if positive_distances.empty or negative_distances.empty:
+        return None
+
+    nearest_legal = float(positive_distances.min())
+    nearest_illegal = float(negative_distances.max())
+    legal_avg = float(working.loc[working[distance_column] == nearest_legal, value_column].mean())
+    illegal_avg = float(working.loc[working[distance_column] == nearest_illegal, value_column].mean())
+    return (legal_avg, illegal_avg)
+
+
 def prepare_results_frame(dataframe: pd.DataFrame) -> pd.DataFrame:
     """Normalize raw vignette results into a plotting-ready dataframe."""
     required_columns = {"model", "vignette", "repeat", "response"}
@@ -170,12 +239,19 @@ def prepare_results_frame(dataframe: pd.DataFrame) -> pd.DataFrame:
     prepared["threshold_column"] = prepared["vignette"].astype(str).map(threshold_column_for_vignette)
     prepared["is_threshold_vignette"] = prepared["threshold_column"].notna()
     prepared["threshold_value"] = None
+    prepared["threshold_distance"] = np.nan
 
     for column in sorted(prepared["threshold_column"].dropna().unique()):
         if column not in prepared.columns:
             continue
         mask = prepared["threshold_column"] == column
         prepared.loc[mask, "threshold_value"] = prepared.loc[mask, column]
+
+    threshold_mask = prepared["threshold_value"].notna()
+    prepared.loc[threshold_mask, "threshold_distance"] = prepared.loc[threshold_mask].apply(
+        lambda row: threshold_distance_for_value(str(row["vignette"]), row["threshold_value"]),
+        axis=1,
+    )
 
     return prepared
 
@@ -331,12 +407,7 @@ def build_threshold_delta_table(
     vignette_group: str,
     selected_models: list[str] | None = None,
 ) -> pd.DataFrame:
-    """Summarize before/after-threshold averages for one threshold family.
-
-    For the standard eight-point threshold sweeps, "before" uses the first four
-    ordered threshold values and "after" uses the last four. Shorter sweeps fall
-    back to splitting the ordered threshold values in half.
-    """
+    """Summarize nearest legal/illegal averages for one threshold family."""
     threshold_column = threshold_column_for_vignette(vignette_group)
     if threshold_column is None:
         raise ValueError(f"Vignette group '{vignette_group}' does not have a threshold column")
@@ -345,7 +416,7 @@ def build_threshold_delta_table(
     if selected_models is not None:
         working = working.loc[working["model"].isin(selected_models)].copy()
     if working.empty:
-        return pd.DataFrame(columns=["Model", "Condition", "Before Threshold Avg.", "After Threshold Avg.", "Delta"])
+        return pd.DataFrame(columns=["Model", "Condition", "Legal Avg.", "Illegal Avg.", "Delta"])
 
     rows: list[dict[str, object]] = []
     model_order = selected_models or sorted(working["model"].dropna().astype(str).unique().tolist())
@@ -361,33 +432,26 @@ def build_threshold_delta_table(
             if variant_frame.empty:
                 continue
 
-            variant_frame = variant_frame.dropna(subset=["threshold_value"]).copy()
-            threshold_order = sorted(
-                pd.unique(variant_frame["threshold_value"]).tolist(),
-                key=lambda value: _threshold_sort_key(variant, value),
+            means = adjacent_threshold_means(
+                variant_frame,
+                value_column="response_score",
+                distance_column="threshold_distance",
             )
-            before_values, after_values = split_threshold_values(threshold_order)
-            if not before_values or not after_values:
+            if means is None:
                 continue
-
-            before_avg = float(
-                variant_frame.loc[variant_frame["threshold_value"].isin(before_values), "response_score"].mean()
-            )
-            after_avg = float(
-                variant_frame.loc[variant_frame["threshold_value"].isin(after_values), "response_score"].mean()
-            )
+            legal_avg, illegal_avg = means
             rows.append(
                 {
                     "Model": model,
                     "Condition": condition_label_for_variant(variant),
-                    "Before Threshold Avg.": before_avg,
-                    "After Threshold Avg.": after_avg,
-                    "Delta": before_avg - after_avg,
+                    "Legal Avg.": legal_avg,
+                    "Illegal Avg.": illegal_avg,
+                    "Delta": legal_avg - illegal_avg,
                 }
             )
 
     if not rows:
-        return pd.DataFrame(columns=["Model", "Condition", "Before Threshold Avg.", "After Threshold Avg.", "Delta"])
+        return pd.DataFrame(columns=["Model", "Condition", "Legal Avg.", "Illegal Avg.", "Delta"])
 
     summary = pd.DataFrame(rows)
     summary = summary.sort_values(
