@@ -31,12 +31,15 @@ from law_norms_llms.dashboard_data import (
 from law_norms_llms.utils import DATASETS_DIR
 
 PROMPT_LABELS = {
-    "baseline": "Baseline",
-    "roleplay_money": "Roleplaying Person, Money Incentive",
+    "baseline": "No Persona",
+    "roleplay_money": "Default - Roleplaying Person, Money Incentive",
     "roleplay_money_old": "Roleplaying Person (Old), Money Incentive",
     "roleplay_money_woman": "Roleplaying Woman, Money Incentive",
     "roleplay_money_young": "Roleplaying Person (Young), Money Incentive",
 }
+
+# Prompts listed first in the dropdown (in order).
+PROMPT_PRIORITY = ["roleplay_money"]
 
 
 def available_dataset_paths() -> dict[str, Path]:
@@ -50,7 +53,10 @@ def available_prompt_options(dataframe: pd.DataFrame) -> list[str]:
         return []
     prompts = sorted(
         dataframe["prompt"].dropna().astype(str).unique().tolist(),
-        key=lambda prompt_name: format_prompt_label(prompt_name).lower(),
+        key=lambda prompt_name: (
+            PROMPT_PRIORITY.index(prompt_name) if prompt_name in PROMPT_PRIORITY else len(PROMPT_PRIORITY),
+            format_prompt_label(prompt_name).lower(),
+        ),
     )
     return prompts
 
