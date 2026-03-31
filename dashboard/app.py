@@ -10,6 +10,7 @@ from app_legacy import (
     BASELINE_OPTION,
     HUMAN_OPTION,
     HUMAN_DATA_PATH,
+    HUMAN_VARIANT_ORDER,
     RESPONSE_SCORES,
     build_baseline_figure,
     build_threshold_figure,
@@ -21,6 +22,7 @@ from app_legacy import (
     summarize_human_threshold_group,
 )
 from law_norms_llms.dashboard_data import (
+    adjacent_threshold_means,
     available_vignette_options,
     build_threshold_delta_table,
     build_threshold_delta_pivot,
@@ -84,19 +86,25 @@ def toggle_series(state_key: str, series_name: str) -> None:
 
 def build_human_delta_pivot(human_dataframe: pd.DataFrame, vignette_group: str) -> pd.DataFrame:
     """Build a one-row human delta table for the current threshold family."""
-    _, summaries = summarize_human_threshold_group(human_dataframe, vignette_group)
+    filtered = human_dataframe.loc[human_dataframe["dashboard_vignette"] == vignette_group].copy()
     rows: list[dict[str, object]] = []
 
-    for variant, summary in summaries.items():
-        before_rows, after_rows = summary.iloc[:4], summary.iloc[-4:]
-        if before_rows.empty or after_rows.empty:
+    for variant in HUMAN_VARIANT_ORDER.get(vignette_group, []):
+        variant_rows = filtered.loc[filtered["dashboard_variant"] == variant].copy()
+        if variant_rows.empty:
             continue
-        before_avg = float(before_rows["mean"].mean())
-        after_avg = float(after_rows["mean"].mean())
+        means = adjacent_threshold_means(
+            variant_rows,
+            value_column="mean",
+            distance_column="threshold1",
+        )
+        if means is None:
+            continue
+        legal_avg, illegal_avg = means
         rows.append(
             {
                 "Condition": condition_label_for_variant(variant),
-                "Delta": before_avg - after_avg,
+                "Delta": legal_avg - illegal_avg,
             }
         )
 

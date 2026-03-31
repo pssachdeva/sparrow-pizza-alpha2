@@ -92,32 +92,56 @@ def test_summarize_threshold_group_collects_variants_under_one_family():
     assert list(summaries) == ["lorry_bad"]
 
 
-def test_build_threshold_delta_table_summarizes_before_and_after_threshold():
+def test_build_threshold_delta_table_uses_adjacent_threshold_values_only():
     dataframe = pd.DataFrame(
         [
             *[
                 {"model": "model-a", "vignette": "speeding_good", "repeat": idx, "item": "answer", "response": "D", "speed": speed}
-                for idx, speed in enumerate([66, 67, 68, 69], start=1)
+                for idx, speed in enumerate([66, 67, 68], start=1)
             ],
             *[
-                {"model": "model-a", "vignette": "speeding_good", "repeat": idx + 4, "item": "answer", "response": "A", "speed": speed}
-                for idx, speed in enumerate([71, 72, 73, 74], start=1)
+                {"model": "model-a", "vignette": "speeding_good", "repeat": 10 + idx, "item": "answer", "response": "C", "speed": speed}
+                for idx, speed in enumerate([69], start=1)
             ],
             *[
-                {"model": "model-a", "vignette": "speeding_neutral", "repeat": idx + 8, "item": "answer", "response": "C", "speed": speed}
-                for idx, speed in enumerate([66, 67, 68, 69], start=1)
+                {"model": "model-a", "vignette": "speeding_good", "repeat": 20 + idx, "item": "answer", "response": "A", "speed": speed}
+                for idx, speed in enumerate([71], start=1)
             ],
             *[
-                {"model": "model-a", "vignette": "speeding_neutral", "repeat": idx + 12, "item": "answer", "response": "B", "speed": speed}
-                for idx, speed in enumerate([71, 72, 73, 74], start=1)
+                {"model": "model-a", "vignette": "speeding_good", "repeat": 30 + idx, "item": "answer", "response": "A", "speed": speed}
+                for idx, speed in enumerate([72, 73, 74], start=1)
             ],
             *[
-                {"model": "model-a", "vignette": "speeding_bad", "repeat": idx + 16, "item": "answer", "response": "D", "speed": speed}
-                for idx, speed in enumerate([66, 67, 68, 69], start=1)
+                {"model": "model-a", "vignette": "speeding_neutral", "repeat": 40 + idx, "item": "answer", "response": "D", "speed": speed}
+                for idx, speed in enumerate([66, 67, 68], start=1)
             ],
             *[
-                {"model": "model-a", "vignette": "speeding_bad", "repeat": idx + 20, "item": "answer", "response": "D", "speed": speed}
-                for idx, speed in enumerate([71, 72, 73, 74], start=1)
+                {"model": "model-a", "vignette": "speeding_neutral", "repeat": 50 + idx, "item": "answer", "response": "B", "speed": speed}
+                for idx, speed in enumerate([69], start=1)
+            ],
+            *[
+                {"model": "model-a", "vignette": "speeding_neutral", "repeat": 60 + idx, "item": "answer", "response": "C", "speed": speed}
+                for idx, speed in enumerate([71], start=1)
+            ],
+            *[
+                {"model": "model-a", "vignette": "speeding_neutral", "repeat": 70 + idx, "item": "answer", "response": "A", "speed": speed}
+                for idx, speed in enumerate([72, 73, 74], start=1)
+            ],
+            *[
+                {"model": "model-a", "vignette": "speeding_bad", "repeat": 80 + idx, "item": "answer", "response": "D", "speed": speed}
+                for idx, speed in enumerate([66, 67, 68], start=1)
+            ],
+            *[
+                {"model": "model-a", "vignette": "speeding_bad", "repeat": 90 + idx, "item": "answer", "response": "D", "speed": speed}
+                for idx, speed in enumerate([69], start=1)
+            ],
+            *[
+                {"model": "model-a", "vignette": "speeding_bad", "repeat": 100 + idx, "item": "answer", "response": "D", "speed": speed}
+                for idx, speed in enumerate([71], start=1)
+            ],
+            *[
+                {"model": "model-a", "vignette": "speeding_bad", "repeat": 110 + idx, "item": "answer", "response": "A", "speed": speed}
+                for idx, speed in enumerate([72, 73, 74], start=1)
             ],
         ]
     )
@@ -126,23 +150,99 @@ def test_build_threshold_delta_table_summarizes_before_and_after_threshold():
     summary = build_threshold_delta_table(prepared, "speeding", selected_models=["model-a"])
 
     assert summary["Condition"].tolist() == ["Positive", "Neutral", "Negative"]
-    assert summary["Before Threshold Avg."].tolist() == [-1.0, -1.0 / 3.0, -1.0]
-    assert summary["After Threshold Avg."].tolist() == [1.0, 1.0 / 3.0, -1.0]
-    assert summary["Delta"].tolist() == [-2.0, -(2.0 / 3.0), 0.0]
+    assert summary["Legal Avg."].tolist() == [-1.0 / 3.0, 1.0 / 3.0, -1.0]
+    assert summary["Illegal Avg."].tolist() == [1.0, -1.0 / 3.0, -1.0]
+    assert summary["Delta"].tolist() == [-(4.0 / 3.0), 2.0 / 3.0, 0.0]
+
+
+def test_build_threshold_delta_table_uses_legality_mapping_for_lorry():
+    dataframe = pd.DataFrame(
+        [
+            *[
+                {"model": "model-a", "vignette": "lorry_neutral", "repeat": idx, "item": "answer", "response": "A", "weight": weight}
+                for idx, weight in enumerate([7.46, 7.47, 7.48, 7.49], start=1)
+            ],
+            *[
+                {"model": "model-a", "vignette": "lorry_neutral", "repeat": idx + 4, "item": "answer", "response": "D", "weight": weight}
+                for idx, weight in enumerate([7.51, 7.52, 7.53, 7.54], start=1)
+            ],
+        ]
+    )
+
+    prepared = prepare_results_frame(dataframe)
+    summary = build_threshold_delta_table(prepared, "lorry", selected_models=["model-a"])
+
+    assert summary["Condition"].tolist() == ["Neutral"]
+    assert summary["Legal Avg."].tolist() == [1.0]
+    assert summary["Illegal Avg."].tolist() == [-1.0]
+    assert summary["Delta"].tolist() == [2.0]
+
+
+def test_build_threshold_delta_table_uses_legality_mapping_for_casino():
+    dataframe = pd.DataFrame(
+        [
+            *[
+                {
+                    "model": "model-a",
+                    "vignette": "casino_neutral",
+                    "repeat": idx,
+                    "item": "answer",
+                    "response": "D",
+                    "age": age,
+                }
+                for idx, age in enumerate(
+                    [
+                        "will turn 18 in seven days",
+                        "will turn 18 in five days",
+                        "will turn 18 in three days",
+                        "will turn 18 in one day",
+                    ],
+                    start=1,
+                )
+            ],
+            *[
+                {
+                    "model": "model-a",
+                    "vignette": "casino_neutral",
+                    "repeat": idx + 4,
+                    "item": "answer",
+                    "response": "A",
+                    "age": age,
+                }
+                for idx, age in enumerate(
+                    [
+                        "turned 18 one day ago",
+                        "turned 18 three days ago",
+                        "turned 18 five days ago",
+                        "turned 18 seven days ago",
+                    ],
+                    start=1,
+                )
+            ],
+        ]
+    )
+
+    prepared = prepare_results_frame(dataframe)
+    summary = build_threshold_delta_table(prepared, "casino", selected_models=["model-a"])
+
+    assert summary["Condition"].tolist() == ["Neutral"]
+    assert summary["Legal Avg."].tolist() == [1.0]
+    assert summary["Illegal Avg."].tolist() == [-1.0]
+    assert summary["Delta"].tolist() == [2.0]
 
 
 def test_build_threshold_delta_pivot_orders_display_columns():
     delta_table = pd.DataFrame(
         [
-            {"Condition": "Positive", "Delta": -0.5},
-            {"Condition": "Neutral", "Delta": -0.25},
-            {"Condition": "Negative", "Delta": 0.1},
+            {"Condition": "Positive", "Delta": 0.5},
+            {"Condition": "Neutral", "Delta": 0.25},
+            {"Condition": "Negative", "Delta": -0.1},
         ]
     )
 
     pivot = build_threshold_delta_pivot(delta_table)
 
     assert pivot.columns.tolist() == ["Neutral", "Positive", "Negative"]
-    assert pivot.loc["Delta", "Neutral"] == -0.25
-    assert pivot.loc["Delta", "Positive"] == -0.5
-    assert pivot.loc["Delta", "Negative"] == 0.1
+    assert pivot.loc["Delta", "Neutral"] == 0.25
+    assert pivot.loc["Delta", "Positive"] == 0.5
+    assert pivot.loc["Delta", "Negative"] == -0.1
